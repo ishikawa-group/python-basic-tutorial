@@ -50,7 +50,7 @@ then
   ```
 
 ### Linux
-* `git clone https://github.com/pyenv/pyenv.git ~/.pyenv`
+`git clone https://github.com/pyenv/pyenv.git ~/.pyenv`
 
 ## pyenv configuration
 1. Update Bash Configuration. Execute following three lines.
