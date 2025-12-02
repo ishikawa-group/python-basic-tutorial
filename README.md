@@ -1,6 +1,6 @@
 # Python - Introduction
 * Basic Python programming techniques.
-* The webpage: https://ishikawa-group.github.io/python_basic_tutorial/
+* The webpage: https://ishikawa-group.github.io/python-basic-tutorial/
 
 ## Contents
 ### Environment Setup and Python Basics
