@@ -70,6 +70,26 @@
   a[0] = 10  # => error
   ```
 
+## set
+* `set` is a collection of unique elements (no duplicates).
+  ```python
+  s = {1, 2, 3}
+  s = {"apple", "banana", "orange"}
+  ```
+* You can check if an element is in a set with `in`:
+  ```python
+  fruits = {"apple", "banana", "orange"}
+  if "apple" in fruits:
+      print("Found!")
+  ```
+* Sets are useful for fast membership checking:
+  ```python
+  valid_extensions = {".png", ".jpg", ".jpeg"}
+  ext = ".png"
+  if ext in valid_extensions:
+      print("Valid image file")
+  ```
+
 ## dict
 * `dict` is a special type that allows making *key* and *value* pair.
 * key and value is separated with colon (`:`).

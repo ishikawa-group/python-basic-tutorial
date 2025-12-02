@@ -134,31 +134,6 @@
   hello()
   ```
 
-* Note that the same variable name is used for both local and global variables, the global variable is used.
-  ```python
-  a = 10
-
-  def hello():
-      a = 20
-      return
-
-  hello()
-  print(a)
-  ```
-
-* It is safer to use *global* inside the function to access the global variable.
-  ```python
-  a = 10
-
-  def hello():
-      global a
-      a = 20
-      return
-
-  hello()
-  print(a)
-  ```
-
 ---
 
 ## Exercise

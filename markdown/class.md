@@ -67,6 +67,39 @@ Usually, objected-oriented programming has some merits, for example, it is easie
   hello()
   ```
 
+3. `__len__`
+* This is called when `len()` is used on the instance.
+  ```python
+  class MyList:
+      def __init__(self, items):
+          self.items = items
+
+      def __len__(self):
+          return len(self.items)
+
+  my_list = MyList([1, 2, 3, 4, 5])
+  print(len(my_list))  # => 5
+  ```
+
+4. `__getitem__`
+* This is called when accessing elements with `[]` (indexing).
+  ```python
+  class MyList:
+      def __init__(self, items):
+          self.items = items
+
+      def __len__(self):
+          return len(self.items)
+
+      def __getitem__(self, idx):
+          return self.items[idx]
+
+  my_list = MyList([10, 20, 30])
+  print(my_list[0])  # => 10
+  print(my_list[2])  # => 30
+  ```
+* These methods are commonly used in PyTorch Dataset classes.
+
 ---
 
 ## Exercise

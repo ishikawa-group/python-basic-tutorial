@@ -14,14 +14,8 @@
 * [Functions and Class]()
   * [Functions](./markdown/function.md)
   * [Class](./markdown/class.md)
-  * [Numpy & Scipy](./markdown/numpy.md)
-  * [Pandas](./markdown/pandas.md)
 
-* [Plotting and machine Learning]()
-  * [Plot](./markdown/plot.md)
-  * [Machine learning](./markdown/machine_learning.md)
-
-* [Generative Adversarial Networks)]()
+* [Generative Adversarial Networks]()
   * [Neural network](./markdown/neural_network.md)
   * [Generative adversarial network](./markdown/gan.md)
 

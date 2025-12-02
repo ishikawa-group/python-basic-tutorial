@@ -39,15 +39,6 @@
       print(i, val)
   ```
 
-### while statement
-* If you want to repeat the procedure based on some condition, you can use `while` statement
-  ```python
-  a = 10
-  while a > 0:
-      print(a)
-      a -= 1
-  ```
-
 ### continue, break; the loop control
 * If you want to skip the loop at some condition, you can use `continue` statement.
   ```python

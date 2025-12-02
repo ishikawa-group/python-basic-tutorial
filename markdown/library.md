@@ -31,3 +31,33 @@
   ```bash
   pip install numpy --update
   ```
+
+## os module (file and directory operations)
+* The `os` module provides functions for interacting with the operating system.
+  ```python
+  import os
+
+  # Get current working directory
+  cwd = os.getcwd()
+
+  # Join path components
+  path = os.path.join("data", "images", "photo.jpg")
+
+  # Get file extension
+  name, ext = os.path.splitext("photo.jpg")
+  print(ext)  # => .jpg
+
+  # Get absolute path
+  abs_path = os.path.abspath("data")
+  ```
+
+* `os.walk` iterates through all directories and files recursively:
+  ```python
+  import os
+
+  for dirpath, dirnames, filenames in os.walk("data"):
+      for filename in filenames:
+          full_path = os.path.join(dirpath, filename)
+          print(full_path)
+  ```
+* This is useful for finding all files in a directory tree.

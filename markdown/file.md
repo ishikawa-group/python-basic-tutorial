@@ -1,5 +1,6 @@
 # File
 * In this lecture, we'll learn how to treat the files in Python.
+
 * To access the files from Python code, you should use `open` function. When opening a file, you need to specify the *mode*.
 
 | letter | meaning             |
@@ -47,8 +48,8 @@
   f = open("filename.txt", "w")
   f.close()
   ```
-
-## with
+  
+## with (context manager)
 * You can use `with` statement to open the file, and in this way, you can omit the closing procedure of the file.
   ```python
   with open("test.txt", "w") as f:
@@ -62,6 +63,15 @@
           print(line)
   ```
 * `strip` is the function to remove change-line charactors.
+
+* The `with` statement works with any "context manager" that needs setup/cleanup. For example, in PyTorch:
+  ```python
+  import torch
+
+  # Disable gradient computation during inference
+  with torch.no_grad():
+      output = model(input)
+  ```
 
 ---
 
