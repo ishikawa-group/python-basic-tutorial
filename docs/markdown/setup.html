@@ -445,8 +445,7 @@
 </li>
 <li>Windows and Mac users go different route for step1, while step 2 is common.</li>
 </ul>
-<h1 id="install">Install</h1>
-<h2 id="installing-pyenv">Installing pyenv</h2>
+<h1 id="installing-pyenv">Installing pyenv</h1>
 <h3 id="windows">Windows</h3>
 <ol>
 <li><p>Install WSL2 (Windows service for linux ver.2); following is an example in Windows 10</p>
@@ -493,7 +492,9 @@ libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-d
 </code></pre>
 </li>
 </ol>
-<h2 id="pyenv-configuration">pyenv configuration</h2>
+<h3 id="linux">Linux</h3>
+<p><code>git clone https://github.com/pyenv/pyenv.git ~/.pyenv</code></p>
+<h3 id="pyenv-configuration-all-environments">pyenv configuration (all environments)</h3>
 <ol>
 <li>Update Bash Configuration. Execute following three lines.<pre><code class="lang-bash"><span class="hljs-built_in">echo</span> <span class="hljs-string">'export PYENV_ROOT="HOME/.pyenv"′&gt;&gt;&nbsp;/.bashrcecho′exportPATH="HOME/.pyenv"'</span> &gt;&gt; ~/.bashrc
   <span class="hljs-built_in">echo</span> <span class="hljs-string">'export PATH="HOME/.pyenv"′&gt;&gt;&nbsp;/.bashrcecho′exportPATH="PYENV_ROOT/bin:PATH"′&gt;&gt;&nbsp;/.bashrcecho′eval"PATH"'</span> &gt;&gt; ~/.bashrc
@@ -508,7 +509,7 @@ libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-d
 </li>
 <li>If you are using zsh, replace <code>~/.bashrc</code> with <code>~/.zshrc</code>.</li>
 </ol>
-<h2 id="install-python-using-pyenv">Install Python using pyenv</h2>
+<h1 id="install-python-using-pyenv">Install Python using pyenv</h1>
 <ol>
 <li><p>List available Python versions</p>
 <pre><code class="lang-bash">pyenv install --list
@@ -529,7 +530,7 @@ libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-d
 </code></pre>
 </li>
 </ol>
-<h2 id="installing-pip">Installing pip</h2>
+<h1 id="installing-pip">Installing pip</h1>
 <ul>
 <li><code>pip</code> is the Python package manager.</li>
 <li>If pyenv is installed, pip is automatically installed.</li>
@@ -561,15 +562,17 @@ libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-d
 <h1 id="vscode">VScode</h1>
 <ul>
 <li>Visual Studio code (VS code) is a free code editor made by Microsoft.</li>
-<li>Works both on Windows and Mac.<h2 id="setup">Setup</h2>
-</li>
+<li>Works both on Windows and Mac.</li>
+</ul>
+<h2 id="setup">Setup</h2>
+<ol>
 <li>Download the installer from <a href="https://code.visualstudio.com/" target="_blank">https://code.visualstudio.com/</a></li>
 <li>Install extensions(拡張機能)<ul>
 <li>"Japanese Language Pack" (if you want).</li>
 <li>"Python"</li>
 </ul>
 </li>
-</ul>
+</ol>
 <h2 id="wrirting-python-script">Wrirting Python script</h2>
 <ol>
 <li>Open a folder where Python script exists</li>
@@ -666,7 +669,7 @@ libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-d
     <script>
         var gitbook = gitbook || [];
         gitbook.push(function() {
-            gitbook.page.hasChanged({"page":{"title":"Environment setup","level":"1.2.1","depth":2,"next":{"title":"Variables and operators","level":"1.2.2","depth":2,"path":"markdown/variables.md","ref":"./markdown/variables.md","articles":[]},"previous":{"title":"Setup and Basics","level":"1.2","depth":1,"ref":"","articles":[{"title":"Environment setup","level":"1.2.1","depth":2,"path":"markdown/setup.md","ref":"./markdown/setup.md","articles":[]},{"title":"Variables and operators","level":"1.2.2","depth":2,"path":"markdown/variables.md","ref":"./markdown/variables.md","articles":[]},{"title":"List, tuple and dict","level":"1.2.3","depth":2,"path":"markdown/list_dict.md","ref":"./markdown/list_dict.md","articles":[]},{"title":"If, for and while statement","level":"1.2.4","depth":2,"path":"markdown/if_for.md","ref":"./markdown/if_for.md","articles":[]},{"title":"Print function","level":"1.2.5","depth":2,"path":"markdown/print.md","ref":"./markdown/print.md","articles":[]},{"title":"File usage in Python","level":"1.2.6","depth":2,"path":"markdown/file.md","ref":"./markdown/file.md","articles":[]},{"title":"Using libraries","level":"1.2.7","depth":2,"path":"markdown/library.md","ref":"./markdown/library.md","articles":[]}]},"dir":"ltr"},"config":{"plugins":["katex","back-to-top-button","hide-published-with"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"katex":{},"back-to-top-button":{},"hide-published-with":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Python Introductino","gitbook":"*","description":"Description"},"file":{"path":"markdown/setup.md","mtime":"2024-12-10T11:52:48.973Z","type":"markdown"},"gitbook":{"version":"6.0.2","time":"2025-12-02T10:01:54.456Z"},"basePath":"..","book":{"language":""}});
+            gitbook.page.hasChanged({"page":{"title":"Environment setup","level":"1.2.1","depth":2,"next":{"title":"Variables and operators","level":"1.2.2","depth":2,"path":"markdown/variables.md","ref":"./markdown/variables.md","articles":[]},"previous":{"title":"Setup and Basics","level":"1.2","depth":1,"ref":"","articles":[{"title":"Environment setup","level":"1.2.1","depth":2,"path":"markdown/setup.md","ref":"./markdown/setup.md","articles":[]},{"title":"Variables and operators","level":"1.2.2","depth":2,"path":"markdown/variables.md","ref":"./markdown/variables.md","articles":[]},{"title":"List, tuple and dict","level":"1.2.3","depth":2,"path":"markdown/list_dict.md","ref":"./markdown/list_dict.md","articles":[]},{"title":"If, for and while statement","level":"1.2.4","depth":2,"path":"markdown/if_for.md","ref":"./markdown/if_for.md","articles":[]},{"title":"Print function","level":"1.2.5","depth":2,"path":"markdown/print.md","ref":"./markdown/print.md","articles":[]},{"title":"File usage in Python","level":"1.2.6","depth":2,"path":"markdown/file.md","ref":"./markdown/file.md","articles":[]},{"title":"Using libraries","level":"1.2.7","depth":2,"path":"markdown/library.md","ref":"./markdown/library.md","articles":[]}]},"dir":"ltr"},"config":{"plugins":["katex","back-to-top-button","hide-published-with"],"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"pluginsConfig":{"katex":{},"back-to-top-button":{},"hide-published-with":{},"highlight":{},"search":{},"lunr":{"maxIndexSize":1000000,"ignoreSpecialCharacters":false},"fontsettings":{"theme":"white","family":"sans","size":2},"theme-default":{"styles":{"website":"styles/website.css","pdf":"styles/pdf.css","epub":"styles/epub.css","mobi":"styles/mobi.css","ebook":"styles/ebook.css","print":"styles/print.css"},"showLevel":false}},"theme":"default","pdf":{"pageNumbers":true,"fontSize":12,"fontFamily":"Arial","paperSize":"a4","chapterMark":"pagebreak","pageBreaksBefore":"/","margin":{"right":62,"left":62,"top":56,"bottom":56},"embedFonts":false},"structure":{"langs":"LANGS.md","readme":"README.md","glossary":"GLOSSARY.md","summary":"SUMMARY.md"},"variables":{},"title":"Python Introductino","gitbook":"*","description":"Description"},"file":{"path":"markdown/setup.md","mtime":"2025-12-02T10:02:21.847Z","type":"markdown"},"gitbook":{"version":"6.0.2","time":"2025-12-02T10:02:30.713Z"},"basePath":"..","book":{"language":""}});
         });
     </script>
 </div>
