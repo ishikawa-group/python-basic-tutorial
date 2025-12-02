@@ -15,12 +15,6 @@
 ### Functions and Class
 * Functions
 * Class
-* Numpy & Scipy
-* Pandas
-
-### Plotting and machine Learning using *scikit-learn*
-* Plot
-* Machine learning
 
 ### Generative Adversarial Networks (GANs)
 * Neural network
