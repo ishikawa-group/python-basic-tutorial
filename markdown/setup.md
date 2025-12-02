@@ -4,8 +4,7 @@
   2. Install Python
 * Windows and Mac users go different route for step1, while step 2 is common.
 
-# Install
-## Installing pyenv
+# Installing pyenv
 ### Windows
 1. Install WSL2 (Windows service for linux ver.2); following is an example in Windows 10
   1. Open "Windows Power Shell" or "Terminal" as Administrator.
@@ -49,7 +48,10 @@ then
   brew install pyenv
   ```
 
-## pyenv configuration
+### Linux
+`git clone https://github.com/pyenv/pyenv.git ~/.pyenv`
+
+### pyenv configuration (all environments)
 1. Update Bash Configuration. Execute following three lines.
   ```bash
   echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.bashrc
@@ -64,7 +66,7 @@ then
   ```
 * If you are using zsh, replace `~/.bashrc` with `~/.zshrc`.
 
-##  Install Python using pyenv
+#  Install Python using pyenv
 1. List available Python versions
   ```bash
   pyenv install --list
@@ -86,7 +88,7 @@ then
   python --version
   ```
 
-## Installing pip
+# Installing pip
 * `pip` is the Python package manager.
 * If pyenv is installed, pip is automatically installed.
 * To not installed, do the following commands to install (both Windows WSL2 and MacOS).
@@ -111,6 +113,7 @@ then
 # VScode
 * Visual Studio code (VS code) is a free code editor made by Microsoft.
 * Works both on Windows and Mac.
+
 ## Setup
 1. Download the installer from https://code.visualstudio.com/
 2. Install extensions(拡張機能)
