@@ -18,5 +18,6 @@
 * [Generative Adversarial Networks]()
   * [Neural network](./markdown/neural_network.md)
   * [Generative adversarial network](./markdown/gan.md)
+  * [PyTorch](./markdown/pytorch.md)
 
 * [Answers](./markdown/answer.md)

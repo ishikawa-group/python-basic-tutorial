@@ -44,7 +44,18 @@ Usually, objected-oriented programming has some merits, for example, it is easie
   b1 = SimpleData.b
   ```
 
-### special methods
+## special methods
+* Special methods (also called **magic methods** or **dunder methods**) are methods with double underscores (`__`) at the beginning and end of their names.
+* These methods allow your custom classes to work with Python's built-in functions and operators.
+* For example:
+  - `__len__` allows `len(your_object)` to work
+  - `__getitem__` allows `your_object[index]` to work
+  - `__str__` allows `print(your_object)` to display meaningful output
+* **Why do we need to define them ourselves?**
+  - Python doesn't know how to apply built-in operations to your custom class by default.
+  - By defining special methods, you tell Python how your class should behave with standard operations.
+  - This makes your objects more intuitive and "Pythonic" to use.
+
 1. `__init__`
 * This is called *constructor*, which is the special method called when the class is instantiated. It should be written like
   ```python
@@ -119,7 +130,18 @@ Usually, objected-oriented programming has some merits, for example, it is easie
 
 ---
 
-## super
+## superclass
+* A **superclass** (also called parent class or base class) is a class that other classes can inherit from.
+* **Why do we need superclass?**
+  - To avoid code duplication: common attributes and methods can be defined once in the superclass
+  - To organize code hierarchically: related classes share a common parent
+  - To make code more maintainable: changes to shared behavior only need to be made in one place
+
+* **Inheritance** is the mechanism that allows a class (child/subclass) to inherit attributes and methods from another class (parent/superclass).
+  - The child class automatically has all the features of the parent class
+  - The child class can add new features or override existing ones
+  - This promotes code reuse and establishes an "is-a" relationship (e.g., a SoccerPlayer "is a" Person)
+
 * Now consider making a class for a soccer player and a baseball player.
   ```python
   class SoccerPlayer:
