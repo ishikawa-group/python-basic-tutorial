@@ -101,6 +101,10 @@ where $z_i$ is the raw output (logit) and $\sigma(z) = 1/(1+\exp(-z))$ is the si
   structured grid data, such as images.
 * Unlike fully connected layers in MLPs where every neuron connects to all neurons in the previous layer, CNNs use *convolutional layers* that apply learnable filters to local regions of the input.
 
+<p align=center>
+<img src="../fig/cnn.png" width=70%>
+</p>
+
 ### Convolutional Layer
 * A convolutional layer applies a set of learnable filters (kernels) to the input. Each filter slides across the input and computes dot products, producing a *feature map*.
 * Key parameters:
@@ -126,19 +130,6 @@ where $K$ is kernel size, $P$ is padding, and $S$ is stride.
   - Most commonly used pooling method
   - Example: 2x2 max pooling with stride 2 reduces each dimension by half
 
-```
-Input (4x4):          After 2x2 Max Pooling (2x2):
-┌───┬───┬───┬───┐     ┌───┬───┐
-│ 1 │ 3 │ 2 │ 1 │     │ 4 │ 6 │
-├───┼───┼───┼───┤     ├───┼───┤
-│ 4 │ 2 │ 6 │ 4 │ --> │ 8 │ 9 │
-├───┼───┼───┼───┤     └───┴───┘
-│ 5 │ 8 │ 1 │ 3 │
-├───┼───┼───┼───┤
-│ 7 │ 2 │ 9 │ 5 │
-└───┴───┴───┴───┘
-```
-
 * **Average Pooling**: Takes the average value from each window
   - Sometimes used in the final layers of a network
 
@@ -151,36 +142,9 @@ Input (4x4):          After 2x2 Max Pooling (2x2):
   - Perform the final classification or regression task
   - The last FC layer typically has the same number of neurons as output classes
 
-```
-Typical CNN Architecture:
-Input → [Conv → ReLU → Pool] × N → Flatten → [FC → ReLU] × M → Output
-```
-
-### Transposed Convolution (Deconvolution)
-* While standard convolution typically reduces spatial dimensions, *transposed convolution* (also called deconvolution) increases spatial dimensions.
-* This is essential for tasks like image generation, where we need to upsample from a small feature map to a full-size image.
-
-* Typically $\alpha = 0.2$. This helps prevent "dying ReLU" problem where neurons can become permanently inactive.
-
 ## Avoiding the overfitting
 * **Overfitting** occurs when a model learns the training data too well, including its noise and specific details, rather than learning general patterns.
 * An overfitted model performs very well on training data but poorly on new, unseen data.
-
-```
-                   Error
-                     │
-     Overfitting ────┼────────────────────────
-                     │         ╱ Test error
-                     │        ╱
-                     │       ╱
-                     │      ╱
-                     │─────╱───────────────────
-                     │    ╱    Training error
-                     │   ╱
-                     └───┴─────────────────────→ Training time
-                        ↑
-                    Optimal point
-```
 
 * **Signs of overfitting**:
   - Training loss decreases but validation/test loss increases
@@ -199,20 +163,11 @@ Input → [Conv → ReLU → Pool] × N → Flatten → [FC → ReLU] × M → O
 * During each training step, each neuron has a probability $p$ (typically 0.5) of being temporarily removed.
 * This prevents neurons from co-adapting too much and forces the network to learn more robust features.
 
-```
-Normal Network:        With Dropout (p=0.5):
-    ●───●───●              ●───●───●
-    │╲ ╱│╲ ╱│              │   │╲  │
-    ● × ● × ●      →       ○   ● × ●    (○ = dropped)
-    │╱ ╲│╱ ╲│              │  ╱│  ╱│
-    ●───●───●              ●───○───●
-```
+<p align="center">
+<img src="../fig/dropout.png" width=60%>
+<p>
 
 * **Important**: During testing/inference, dropout is turned off, but the weights are scaled by $(1-p)$ to account for the missing neurons during training.
-* In PyTorch:
-  ```python
-  nn.Dropout(p=0.5)  # 50% dropout rate
-  ```
 
 ## Batch Normalization
 * Batch normalization is a technique to improve training stability and speed by normalizing the inputs to each layer.
@@ -229,10 +184,10 @@ Normal Network:        With Dropout (p=0.5):
 
 * For a mini-batch of activations, it normalizes by:
 $$
-\hat{x}_i = \frac{x_i - \mu_B}{\sqrt{\sigma_B^2 + \epsilon}}
-$$
-$$
+\begin{gather*}
+\hat{x}_i = \frac{x_i - \mu_B}{\sqrt{\sigma_B^2 + \epsilon}} \\
 y_i = \gamma \hat{x}_i + \beta
+\end{gather*}
 $$
 where $\mu_B$ and $\sigma_B^2$ are the mean and variance of the mini-batch, and $\gamma$, $\beta$ are learnable parameters.
 
@@ -240,12 +195,6 @@ where $\mu_B$ and $\sigma_B^2$ are the mean and variance of the mini-batch, and 
   - Mean $\mu_B$ = 125, Variance $\sigma_B^2$ = 3125
   - After normalization: [-0.45, 1.34, 0.45, -1.34] (approximately)
   - The network then learns optimal $\gamma$ and $\beta$ to scale/shift these values
-
-* In PyTorch:
-  ```python
-  nn.BatchNorm1d(num_features)  # For FC layers
-  nn.BatchNorm2d(num_features)  # For Conv layers (normalizes per channel)
-  ```
 
 * Benefits:
   - Allows higher learning rates

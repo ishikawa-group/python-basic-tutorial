@@ -44,9 +44,9 @@
   ```python
   for i in range(10):
       if i == 5:
-      continue
+          continue
   else:
-      print(i)
+          print(i)
   ```
 * The `for` loop goes to the next step when it finds `continue`. So rest of the part is not executed.
 * If you want to end the loop at some condition, you can use `break` statement.
@@ -55,7 +55,7 @@
       if i == 5:
           break
       else:
-        print(i)
+          print(i)
   ```
 * In this way, the loop after finding `i == 5` is not executed.
 

@@ -140,7 +140,6 @@ Usually, objected-oriented programming has some merits, for example, it is easie
 * **Inheritance** is the mechanism that allows a class (child/subclass) to inherit attributes and methods from another class (parent/superclass).
   - The child class automatically has all the features of the parent class
   - The child class can add new features or override existing ones
-  - This promotes code reuse and establishes an "is-a" relationship (e.g., a SoccerPlayer "is a" Person)
 
 * Now consider making a class for a soccer player and a baseball player.
   ```python

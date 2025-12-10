@@ -81,3 +81,10 @@ Input                                              Output
 1. **Preserves Structure**: Skip connections keep the original edges and shapes
 2. **Learns Transformation**: The bottleneck learns how to transform features
 3. **Sharp Output**: Fine details from encoder help decoder create crisp results
+
+
+# Transposed Convolution (Deconvolution)
+* While standard convolution typically reduces spatial dimensions, *transposed convolution* (also called deconvolution) increases spatial dimensions.
+* This is essential for tasks like image generation, where we need to upsample from a small feature map to a full-size image.
+
+* Typically $\alpha = 0.2$. This helps prevent "dying ReLU" problem where neurons can become permanently inactive.
