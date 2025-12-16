@@ -17,7 +17,10 @@
 
 * [Generative Adversarial Networks]()
   * [Neural network](./markdown/neural_network.md)
-  * [Generative adversarial network](./markdown/gan.md)
+  * [Generative adversarial network](./markdown/gan_basic.md)
+  * [Plot](./markdown/plot.md)
+  * [Numpy](./markdown/numpy.md)
   * [PyTorch](./markdown/pytorch.md)
+  * [MNIST example](./mnist_gan.py)
 
 * [Answers](./markdown/answer.md)

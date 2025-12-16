@@ -1,6 +1,7 @@
 # PyTorch Basics
-
-PyTorch is a deep learning library developed by Meta (Facebook). It provides tensors (like NumPy arrays but with GPU support) and automatic differentiation for building neural networks.
+* PyTorch is a deep learning library developed by Meta (Facebook).
+* It provides tensors (like NumPy arrays but with GPU support).
+* It also supports automatic differentiation for building neural networks.
 
 ## Import
 
@@ -12,28 +13,21 @@ from torch.utils.data import DataLoader, random_split
 ```
 
 ## Tensor
-
-Tensors are multi-dimensional arrays, similar to NumPy arrays.
+* A tensor is a multi-dimensional array (like NumPy), used for data and model weights.
+* Two basics you will see all the time: `shape` (size) and `dtype` (type).
+* Very small example:
 
 ```python
-# Create tensors
-x = torch.zeros(3, 4)       # 3x4 tensor of zeros
-x = torch.ones(3, 4)        # 3x4 tensor of ones
-x = torch.randn(3, 4)       # 3x4 tensor of random numbers
+import torch
 
-# Convert from/to NumPy
-import numpy as np
-a = np.array([1, 2, 3])
-t = torch.from_numpy(a)     # NumPy → Tensor
-a2 = t.numpy()              # Tensor → NumPy
-
-# Check min/max
-torch.min(x), torch.max(x)
+x = torch.tensor([[1.0, 2.0], [3.0, 4.0]])  # shape: (2, 2)
+print(x.shape, x.dtype)
+print(x[0, 1])   # indexing -> 2.0
+print(x + 10)    # add 10 to every element
 ```
 
 ## Device (CPU / GPU)
-
-PyTorch can run on CPU or GPU. GPU is much faster for training.
+* PyTorch can run on CPU or GPU. GPU is much faster for training.
 
 ```python
 # Check available device
@@ -50,10 +44,12 @@ model = model.to(device)
 ```
 
 ## nn.Module (defining models)
-
-Neural networks are defined as classes that inherit from `nn.Module`.
+* Neural networks are defined as classes that inherit from `nn.Module`.
 
 ```python
+import torch
+from torch import nn
+
 class SimpleModel(nn.Module):
     def __init__(self):
         super().__init__()
@@ -67,11 +63,14 @@ class SimpleModel(nn.Module):
         return x
 
 model = SimpleModel()
+
+x = torch.randn(4, 10)  # 4 samples, 10 features each
+y = model(x)
+print(y.shape)          # -> torch.Size([4, 1])
 ```
 
 ## nn.Sequential
-
-For simple networks, you can use `nn.Sequential` to stack layers.
+* For simple networks, you can use `nn.Sequential` to stack layers.
 
 ```python
 model = nn.Sequential(
@@ -81,18 +80,19 @@ model = nn.Sequential(
 )
 ```
 
-## Common Layers
+# Common Layers
 
 | Layer | Example | Role |
 |-------|---------|------|
 | `nn.Linear` | `nn.Linear(128, 64)` | Fully connected layer |
 | `nn.Conv2d` | `nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1)` | 2D convolution (extract features) |
-| `nn.ConvTranspose2d` | `nn.ConvTranspose2d(64, 3, kernel_size=4, stride=2, padding=1)` | Upsampling (reverse of Conv2d) |
+| `nn.ConvTranspose2d` | `nn.ConvTranspose2d(64, 3, 4, 2, 1)` | Upsampling (reverse of Conv2d) |
 | `nn.Flatten` | `nn.Flatten()` | Flatten tensor to 1D |
 | `nn.LazyLinear` | `nn.LazyLinear(1)` | Linear layer (auto-detects input size) |
 | `nn.BatchNorm2d` | `nn.BatchNorm2d(64)` | Normalize feature maps (stabilize training) |
 
-## Activation Functions
+
+# Activation Functions
 
 | Function | Example | Output Range | Use Case |
 |----------|---------|--------------|----------|
@@ -101,7 +101,8 @@ model = nn.Sequential(
 | `nn.Tanh` | `nn.Tanh()` | [-1, 1] | Image output |
 | `nn.Sigmoid` | `nn.Sigmoid()` | [0, 1] | Binary classification |
 
-## Loss Functions
+
+# Loss Functions
 
 ```python
 # For binary classification (real/fake)
@@ -114,44 +115,63 @@ l1_loss = nn.L1Loss()
 loss = criterion(prediction, target)
 ```
 
-## Optimizer
 
-Optimizers update model weights based on gradients.
+# Optimizer
+* An optimizer updates weights to reduce the loss.
+* Typical steps:
+    1. `zero_grad()`: clear old gradients from the previous step
+    2. `backward()`: compute gradients (how loss changes w.r.t. each weight)
+    3. `step()`: update weights using those gradients
 
-```python
-optimizer = Adam(model.parameters(), lr=0.0002, betas=(0.5, 0.999))
-
-# Training step
-optimizer.zero_grad()   # Clear gradients
-loss.backward()         # Compute gradients
-optimizer.step()        # Update weights
-```
-
-## DataLoader
-
-DataLoader loads data in batches for training.
+Very small example (one update step):
 
 ```python
-from torch.utils.data import DataLoader, random_split
+import torch
+from torch import nn
+from torch.optim import Adam
 
-# Split dataset into train/test
-train_size = int(len(dataset) * 0.8)
-test_size = len(dataset) - train_size
-train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
+model = nn.Linear(1, 1)
+optimizer = Adam(model.parameters(), lr=0.1)
+criterion = nn.MSELoss()
 
-# Create DataLoader
-train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
+x = torch.tensor([[1.0], [2.0], [3.0]])
+y = torch.tensor([[2.0], [4.0], [6.0]])  # target: y = 2x
 
-# Iterate over batches
-for batch_data, batch_labels in train_loader:
-    # training code here
-    pass
+pred = model(x)
+loss = criterion(pred, y)
+
+optimizer.zero_grad()
+loss.backward()
+optimizer.step()
+
+print(float(loss))
 ```
 
-## torch.no_grad()
+# DataLoader
+* `DataLoader` turns a `Dataset` into an iterator of **mini-batches**.
+* Use `batch_size` to control batch size and `shuffle=True` for training.
 
-Disable gradient computation during inference (saves memory).
+* Very small example:
+
+```python
+import torch
+from torch.utils.data import DataLoader, TensorDataset
+
+# 4 samples: x -> y
+x = torch.tensor([[0.0], [1.0], [2.0], [3.0]])
+y = torch.tensor([0, 0, 1, 1])
+
+dataset = TensorDataset(x, y)
+loader = DataLoader(dataset, batch_size=2, shuffle=True)
+
+for batch_x, batch_y in loader:
+    print(batch_x, batch_y)
+```
+* Common options: `batch_size`, `shuffle`, `num_workers`, `drop_last`.
+
+
+# torch.no_grad()
+* Disable gradient computation during inference (saves memory).
 
 ```python
 model.eval()  # Set model to evaluation mode
@@ -160,48 +180,27 @@ with torch.no_grad():
     output = model(input)
 ```
 
-## Basic Training Loop
+# torchvision.transforms
+* `torchvision.transforms` helps you preprocess images before feeding them to a model.
+* `Compose([...])` applies transforms in order.
 
-```python
-model = SimpleModel().to(device)
-optimizer = Adam(model.parameters(), lr=0.001)
-criterion = nn.MSELoss()
-
-for epoch in range(num_epochs):
-    for data, target in train_loader:
-        data = data.to(device)
-        target = target.to(device)
-
-        optimizer.zero_grad()       # 1. Clear gradients
-        output = model(data)        # 2. Forward pass
-        loss = criterion(output, target)  # 3. Compute loss
-        loss.backward()             # 4. Backward pass
-        optimizer.step()            # 5. Update weights
-
-    print(f"Epoch {epoch+1}, Loss: {loss.item():.4f}")
-```
-
-## torchvision.transforms
-
-`torchvision.transforms` provides image preprocessing pipelines.
+* Very small example
 
 ```python
 from torchvision import transforms
+from PIL import Image
 
-# Create a transform pipeline
 transform = transforms.Compose([
-    transforms.Resize((96, 96)),           # Resize to 96x96
-    transforms.ToTensor(),                  # Convert PIL Image to Tensor [0, 1]
-    transforms.Normalize((0.5,), (0.5,)),   # Normalize to [-1, 1]
+    transforms.Resize((32, 32)),
+    transforms.ToTensor(),
 ])
 
-# Apply transform to an image
-from PIL import Image
-img = Image.open("photo.jpg")
+img = Image.new("L", (28, 28), color=128)  # dummy grayscale image
 tensor = transform(img)
+print(tensor.shape, float(tensor.min()), float(tensor.max()))
 ```
 
-Common transforms:
+* Common transforms:
 
 | Transform | Example | Description |
 |-----------|---------|-------------|
@@ -211,52 +210,32 @@ Common transforms:
 | `Grayscale` | `transforms.Grayscale(num_output_channels=1)` | Convert to grayscale |
 | `Compose` | `transforms.Compose([...])` | Chain multiple transforms |
 
-## torchvision.transforms.functional
+
+# Custom Dataset
+
+* Create a custom `Dataset` when your data is not already in a built-in dataset class.
+* You must implement `__len__()` and `__getitem__()`.
+
+* Very small example:
 
 ```python
-from torchvision.transforms.functional import to_pil_image
-
-# Convert tensor to PIL Image
-img = to_pil_image(tensor)
-img.save("output.png")
-```
-
-## Custom Dataset
-
-To load your own data, create a class that inherits from `torch.utils.data.Dataset`.
-
-```python
+import torch
 from torch.utils.data import Dataset
-from PIL import Image
-import os
 
-class MyDataset(Dataset):
-    def __init__(self, root_dir, transform=None):
-        self.root_dir = root_dir
-        self.transform = transform
-
-        # Find all image files
-        self.images = []
-        for filename in os.listdir(root_dir):
-            if filename.endswith((".png", ".jpg")):
-                self.images.append(os.path.join(root_dir, filename))
+class TinyDataset(Dataset):
+    def __init__(self):
+        self.x = torch.tensor([[0.0], [1.0], [2.0], [3.0]])
+        self.y = torch.tensor([0, 0, 1, 1])
 
     def __len__(self):
-        return len(self.images)
+        return len(self.x)
 
     def __getitem__(self, idx):
-        img_path = self.images[idx]
-        image = Image.open(img_path).convert("RGB")
+        return self.x[idx], self.y[idx]
 
-        if self.transform:
-            image = self.transform(image)
-
-        return image
-
-# Usage
-dataset = MyDataset("data/images", transform=transform)
-print(len(dataset))     # Number of images
-img = dataset[0]        # Get first image
+dataset = TinyDataset()
+print(len(dataset))
+print(dataset[0])
 ```
 
-The `__len__` and `__getitem__` methods are required for DataLoader to work.
+* The `__len__` and `__getitem__` methods are what `DataLoader` uses internally.

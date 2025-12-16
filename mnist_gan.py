@@ -1,167 +1,216 @@
-import os
 import torch
-import torchvision
+import torch.nn as nn
+import torch.optim as optim
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
+from tqdm import tqdm
+from IPython.display import clear_output
+
+# For Google Colab inline plotting
 # %matplotlib inline
 
-import torch.nn as nn
-from torchvision.transforms import ToTensor, Normalize, Compose
-from torchvision.datasets import MNIST
-from torch.utils.data import DataLoader
+# ============================================
+# 1. Define Hyperparameters
+# ============================================
+latent_dim = 64      # Size of random noise input to Generator
+hidden_dim = 256     # Number of neurons in hidden layers
+image_dim = 28 * 28  # MNIST image size (784 pixels)
+batch_size = 64
+epochs = 20
+learning_rate = 0.0002
 
-from IPython.display import Image
-from torchvision.utils import save_image
+# Device configuration
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f"Using device: {device}")
 
-mnist = MNIST(root="data",
-              train=True, 
-              download=True,
-              transform=Compose([ToTensor(), Normalize(mean=(0.5,), std=(0.5,))]))
+# ============================================
+# 2. Define Generator Network
+# ============================================
+class Generator(nn.Module):
+    # Architecture: noise → hidden layers → image
+    # Input:  random noise vector (size: latent_dim)
+    # Output: fake image (size: image_dim)
 
-img, label = mnist[0]
-print("Label: ", label)
-print(img[:, 10:15, 10:15])
+    def __init__(self):
+        super(Generator, self).__init__()
+        # Layer 1: latent_dim → hidden_dim, then ReLU activation
+        # Layer 2: hidden_dim → hidden_dim, then ReLU activation
+        # Layer 3: hidden_dim → image_dim, then Tanh activation
+        # Tanh outputs values in range [-1, 1]
+        self.model = nn.Sequential(
+            nn.Linear(latent_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, image_dim),
+            nn.Tanh()
+        )
 
-plt.imshow(img[0], cmap="gray")
-print('Label:', label)
+    def forward(self, z):
+        # z: random noise
+        # returns: generated fake image
+        return self.model(z)
+
+# ============================================
+# 3. Define Discriminator Network
+# ============================================
+class Discriminator(nn.Module):
+    # Architecture: image → hidden layers → real/fake score
+    # Input:  image (size: image_dim)
+    # Output: single value (probability of being real)
+
+    def __init__(self):
+        super(Discriminator, self).__init__()
+        # Layer 1: image_dim → hidden_dim, then ReLU activation
+        # Layer 2: hidden_dim → hidden_dim, then ReLU activation
+        # Layer 3: hidden_dim → 1 (single output)
+        self.model = nn.Sequential(
+            nn.Linear(image_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, 1)
+        )
+
+    def forward(self, x):
+        # x: input image (real or fake)
+        # returns: score indicating real (1) or fake (0)
+        return self.model(x)
+
+# ============================================
+# 4. Initialize Models and Optimizers
+# ============================================
+generator = Generator().to(device)
+discriminator = Discriminator().to(device)
+
+# Loss function: Binary Cross Entropy (BCE)
+criterion = nn.BCEWithLogitsLoss()
+
+# Optimizers: Adam optimizer for both G and D
+optimizer_g = optim.Adam(generator.parameters(), lr=learning_rate)
+optimizer_d = optim.Adam(discriminator.parameters(), lr=learning_rate)
+
+# ============================================
+# 5. Load MNIST Dataset
+# ============================================
+# Load 60,000 training images of handwritten digits
+# Normalize pixel values to range [-1, 1]
+# Create batches of size batch_size
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.5,), (0.5,))  # Normalize to [-1, 1]
+])
+
+train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+
+# ============================================
+# 6. Training Loop
+# ============================================
+# Store losses for plotting
+g_losses = []
+d_losses = []
+
+for epoch in range(epochs):
+    epoch_d_loss = 0
+    epoch_g_loss = 0
+
+    for real_images, _ in tqdm(dataloader, desc=f"Epoch {epoch+1}/{epochs}"):
+        batch_size_current = real_images.size(0)
+        real_images = real_images.view(batch_size_current, -1).to(device)
+
+        # ----- Step A: Train Discriminator -----
+        # Goal: D should output 1 for real, 0 for fake
+
+        # A1. Feed real images to D
+        d_output_real = discriminator(real_images)
+        labels_real = torch.ones(batch_size_current, 1).to(device)
+        loss_real = criterion(d_output_real, labels_real)  # Should be 1
+
+        # A2. Generate fake images and feed to D
+        noise = torch.randn(batch_size_current, latent_dim).to(device)
+        fake_images = generator(noise)
+        d_output_fake = discriminator(fake_images.detach())
+        labels_fake = torch.zeros(batch_size_current, 1).to(device)
+        loss_fake = criterion(d_output_fake, labels_fake)  # Should be 0
+
+        # A3. Update D weights
+        loss_d = loss_real + loss_fake
+        optimizer_d.zero_grad()
+        loss_d.backward()
+        optimizer_d.step()
+
+        # ----- Step B: Train Generator -----
+        # Goal: G should fool D into outputting 1 for fake images
+
+        # B1. Generate new fake images
+        noise = torch.randn(batch_size_current, latent_dim).to(device)
+        fake_images = generator(noise)
+
+        # B2. Feed fake images to D
+        d_output = discriminator(fake_images)
+        labels_real = torch.ones(batch_size_current, 1).to(device)
+        loss_g = criterion(d_output, labels_real)  # G wants D to say 1 (real)
+
+        # B3. Update G weights
+        optimizer_g.zero_grad()
+        loss_g.backward()
+        optimizer_g.step()
+
+        epoch_d_loss += loss_d.item()
+        epoch_g_loss += loss_g.item()
+
+    # Average loss for the epoch
+    avg_d_loss = epoch_d_loss / len(dataloader)
+    avg_g_loss = epoch_g_loss / len(dataloader)
+    d_losses.append(avg_d_loss)
+    g_losses.append(avg_g_loss)
+
+    print(f"Epoch {epoch+1}: discriminator loss={avg_d_loss:.4f}, generator loss={avg_g_loss:.4f}")
+
+# ============================================
+# 7. Generate New Images (After Training)
+# ============================================
+# noise = random_normal(size=latent_dim)
+# new_image = generator(noise)
+# The generated image should look like a handwritten digit!
+
+# Plot training losses
+plt.figure(figsize=(8, 4))
+plt.plot(d_losses, label='Discriminator Loss')
+plt.plot(g_losses, label='Generator Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Training Losses')
+plt.legend()
 plt.show()
 
-batch_size = 32
-data_loader = DataLoader(mnist, batch_size, shuffle=True)
+# Generate final images
+generator.eval()
+with torch.no_grad():
+    noise = torch.randn(16, latent_dim).to(device)
+    generated_images = generator(noise).cpu().view(-1, 28, 28)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # random noize
+    noise = torch.randn(16, latent_dim).to(device)
 
-image_size = 784
-hidden_size = 256
+    # get generated images from generator
+    generated_images = generator(noise)
 
-D = nn.Sequential(
-    nn.Linear(image_size, hidden_size),
-    nn.LeakyReLU(0.2),
-    nn.Linear(hidden_size, hidden_size),
-    nn.LeakyReLU(0.2),
-    nn.Linear(hidden_size, 1),
-    nn.Sigmoid())
+    # move device from GPU to CPU, needed to do plotting
+    generated_images = generated_images.cpu()
 
-D.to(device)
+    # "view" is done to resize the figure to 28x28
+    generated_images = generated_images.view(-1, 28, 28)
 
-latent_size = 64
-G = nn.Sequential(
-    nn.Linear(latent_size, hidden_size),
-    nn.ReLU(),
-    nn.Linear(hidden_size, hidden_size),
-    nn.ReLU(),
-    nn.Linear(hidden_size, image_size),
-    nn.Tanh())
+# Do plot
+plt.figure(figsize=(5, 5))
+for i in range(16):
+    plt.subplot(4, 4, i + 1)
+    plt.imshow(generated_images[i], cmap="gray")
+    plt.axis("off")
 
-y = G(torch.randn(2, latent_size))
-gen_imgs = y.reshape((-1, 28,28)).detach()
-plt.imshow(gen_imgs[0], cmap="gray");
-plt.show()
-
-G.to(device)
-
-criterion = nn.BCELoss()
-d_optimizer = torch.optim.Adam(D.parameters(), lr=0.0002)
-
-def reset_grad():
-    d_optimizer.zero_grad()
-    g_optimizer.zero_grad()
-
-def train_discriminator(images):
-    # Create the labels which are later used as input for the BCE loss
-    real_labels = torch.ones(batch_size, 1).to(device)
-    fake_labels = torch.zeros(batch_size, 1).to(device)
-        
-    # Loss for real images
-    outputs = D(images)
-    d_loss_real = criterion(outputs, real_labels)
-    real_score = outputs
-
-    # Loss for fake images
-    z = torch.randn(batch_size, latent_size).to(device)
-    fake_images = G(z)
-    outputs = D(fake_images)
-    d_loss_fake = criterion(outputs, fake_labels)
-    fake_score = outputs
-
-    # Combine losses
-    d_loss = d_loss_real + d_loss_fake
-    # Reset gradients
-    reset_grad()
-    # Compute gradients
-    d_loss.backward()
-    # Adjust the parameters using backprop
-    d_optimizer.step()
-    
-    return d_loss, real_score, fake_score
-
-g_optimizer = torch.optim.Adam(G.parameters(), lr=0.0002)
-def train_generator():
-    # Generate fake images and calculate loss
-    z = torch.randn(batch_size, latent_size).to(device)
-    fake_images = G(z)
-    labels = torch.ones(batch_size, 1).to(device)
-    g_loss = criterion(D(fake_images), labels)
-
-    # Backprop and optimize
-    reset_grad()
-    g_loss.backward()
-    g_optimizer.step()
-    return g_loss, fake_images
-
-sample_dir = 'samples'
-if not os.path.exists(sample_dir):
-    os.makedirs(sample_dir)
-
-# Save some real images
-for images, _ in data_loader:
-    images = images.reshape(images.size(0), 1, 28, 28)
-    save_image(images, os.path.join(sample_dir, "real_images.png"), nrow=10)
-    break
-   
-Image(os.path.join(sample_dir, "real_images.png"))
-
-sample_vectors = torch.randn(batch_size, latent_size).to(device)
-
-def save_fake_images(index):
-    fake_images = G(sample_vectors)
-    fake_images = fake_images.reshape(fake_images.size(0), 1, 28, 28)
-    fake_fname = f"fake_images-{index:0=4d}.png"
-    print("Saving", fake_fname)
-    save_image(fake_images, os.path.join(sample_dir, fake_fname), nrow=10)
-
-save_fake_images(0)
-Image(os.path.join(sample_dir, "fake_images-0000.png"))
-
-num_epochs = 50
-total_step = len(data_loader)
-d_losses, g_losses, real_scores, fake_scores = [], [], [], []
-
-for epoch in range(num_epochs):
-    for i, (images, _) in enumerate(data_loader):
-
-        # Load a batch & transform to vectors
-        images = images.reshape(batch_size, -1).to(device)
-        
-        # Train the discriminator and generator
-        d_loss, real_score, fake_score = train_discriminator(images)
-        g_loss, fake_images = train_generator()
-        
-        # Inspect the losses
-        if (i+1) % 500 == 0:
-            d_losses.append(d_loss.item())
-            g_losses.append(g_loss.item())
-            real_scores.append(real_score.mean().item())
-            fake_scores.append(fake_score.mean().item())
-            print(f"Epoch [{epoch:2}/{num_epochs:2}], Step [{i+1:4}/{total_step:4}], d_loss: {d_loss.item():.4f}, g_loss: {g_loss.item():.4f}")
-    
-    # Sample and save images
-    if (epoch+1) % 10 == 0:
-        save_fake_images(epoch+1)
-
-plt.plot(d_losses, '-')
-plt.plot(g_losses, '-')
-plt.xlabel('epoch')
-plt.ylabel('loss')
-plt.legend(['Discriminator', 'Generator'])
-plt.title('Losses')
+plt.title(f"Final generated images")
+plt.tight_layout()
 plt.show()

@@ -1,24 +1,9 @@
 # GAN advanced topics
 * Here some advanced topics about the GAN are explained.
- 
-# Conditional GAN
-* In a standard GAN, the Generator creates images from random noise alone. In a **conditional GAN (cGAN)**, the 
-Generator receives additional input that guides what to generate.
-
-| Type | Input | Output | Example |
-|------|-------|--------|---------|
-| Standard GAN | Random noise | Generated image | Random face generation |
-| Conditional GAN | Noise + condition | Guided image | Grayscale → Color |
-
-* Examples of conditional GAN tasks:
-  - **Image colorization**: Grayscale image → Color image
-  - **Image super-resolution**: Low-res → High-res
-  - **Style transfer**: Photo → Painting style
-  - **Semantic segmentation**: Label map → Realistic image
- 
 
 # U-Net Architecture
-* U-Net is a popular neural network architecture for image-to-image tasks. It's widely used as the Generator in conditional GANs.
+* U-Net is a popular neural network architecture for image-to-image tasks.
+* It's widely used as the Generator in conditional GANs.
 
 ### Encoder-Decoder Structure
 
@@ -84,7 +69,65 @@ Input                                              Output
 
 
 # Transposed Convolution (Deconvolution)
-* While standard convolution typically reduces spatial dimensions, *transposed convolution* (also called deconvolution) increases spatial dimensions.
-* This is essential for tasks like image generation, where we need to upsample from a small feature map to a full-size image.
+* Standard convolution often reduces spatial dimensions.
+* *Transposed convolution* increases spatial dimensions.
+* This is essential for image generation, where we upsample from a small feature map to a full-size image.
 
-* Typically $\alpha = 0.2$. This helps prevent "dying ReLU" problem where neurons can become permanently inactive.
+### What is it (in plain words)?
+* `Conv2d` takes an image/feature-map and usually makes it **smaller** (downsampling).
+* `ConvTranspose2d` does the opposite: it makes a feature-map **bigger** (upsampling).
+* It is not a true "inverse" of convolution (so "deconvolution" is a confusing nickname).
+
+### Why GAN generators use it
+* A generator often starts from a small tensor (like `4x4` or `7x7`).
+* Then it repeatedly upsamples until it reaches the final image size.
+* `ConvTranspose2d` learns how to upsample in a trainable way (not just copying pixels).
+
+### Primitive example (just shapes)
+* This example shows a common GAN setting: `kernel_size=4, stride=2, padding=1` doubles H and W.
+
+```python
+import torch
+from torch import nn
+
+# Batch=1, Channels=16, Height=8, Width=8
+x = torch.randn(1, 16, 8, 8)
+
+up = nn.ConvTranspose2d(
+    in_channels=16,
+    out_channels=8,
+    kernel_size=4,
+    stride=2,
+    padding=1,
+)
+
+y = up(x)
+print("input:", x.shape)   # torch.Size([1, 16, 8, 8])
+print("output:", y.shape)  # torch.Size([1, 8, 16, 16])
+```
+
+
+# Conv2d Output Size Calculation
+* For convolutional neural networks (used in advanced GANs like DCGAN), the output size formula is:
+
+```
+Output Size = floor((Input + 2×Padding - Kernel) / Stride) + 1
+```
+
+| Parameter | Description | Common Values |
+|-----------|-------------|---------------|
+| **Kernel** | Size of the filter window | 3, 4, 5 |
+| **Stride** | Step size when sliding the filter | 1, 2 |
+| **Padding** | Zero-padding added to input edges | 0, 1, 2 |
+
+**Examples:**
+```
+Input=28, Kernel=3, Stride=1, Padding=1 → Output = (28+2-3)/1+1 = 28 (same size)
+Input=28, Kernel=4, Stride=2, Padding=1 → Output = (28+2-4)/2+1 = 14 (half size)
+Input=14, Kernel=4, Stride=2, Padding=1 → Output = (14+2-4)/2+1 = 7  (half size)
+```
+
+**Quick Rules:**
+- Kernel=3, Stride=1, Padding=1 → **Same size** (commonly used)
+- Kernel=4, Stride=2, Padding=1 → **Half size** (for downsampling)
+- Kernel=4, Stride=2, Padding=1 (in TransposeConv2d) → **Double size** (for upsampling)

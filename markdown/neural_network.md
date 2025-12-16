@@ -28,7 +28,7 @@ $$
 $$
 
 <p align=center>
-<img src="../fig/perceptron.png" width=40%>
+<img src="../fig/perceptron.png" width=60%>
 </p>
 
 * A single LTU can be used for simple linear binary classification. It computes a linear combination of the inputs and if the result exceeds a threshold. Otherwise it outputs the positive class or else outputs the negative class.
@@ -39,7 +39,7 @@ $$
 * Every layer except the output layer includes a bias neuron and is fully connected to the next layer. When an ANN has two or more hidden layers, it is called a *deep neutral network*.
 
 <p align=center>
-<img src="../fig/mlp.png" width=50%>
+<img src="../fig/mlp.png" width=70%>
 </p>
 
 ### Backpropagation
@@ -51,7 +51,7 @@ $$
 * This reverse pass efficiently measures the error gradient across all the connection weights in the network by propagating the error gradient backward in the network.
 
 <p align=center>
-<img src="../fig/backpropagation.png" width=50%>
+<img src="../fig/backpropagation.png" width=70%>
 </p>
 
 ### Activation function
@@ -66,7 +66,7 @@ $$
       abruptly, which can make gradient descent bounce around). However, in practice, it works very well and has the advantage of being fast to compute. It does not have a maximum output value also helps reduce some issues during gradient descent.
 
 <p align=center>
-<img src="../fig/activation.png" width=80%>
+<img src="../fig/activation.png" width=100%>
 </p>
 
 ### Loss function
@@ -102,7 +102,7 @@ where $z_i$ is the raw output (logit) and $\sigma(z) = 1/(1+\exp(-z))$ is the si
 * Unlike fully connected layers in MLPs where every neuron connects to all neurons in the previous layer, CNNs use *convolutional layers* that apply learnable filters to local regions of the input.
 
 <p align=center>
-<img src="../fig/cnn.png" width=70%>
+<img src="../fig/cnn.png" width=90%>
 </p>
 
 ### Convolutional Layer

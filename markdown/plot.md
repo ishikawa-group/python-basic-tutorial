@@ -142,6 +142,7 @@ plt.show()
 ```
 
 ### Figure configuration
+
 ```python
 import numpy as np
 import matplotlib.pyplot as plt
@@ -216,53 +217,3 @@ plt.show()
 sns.pairplot(data=iris)
 plt.show()
 ```
-
-# Plotly
-* `plotly` enables an interactive plot, which is made on the browser, and you can see numerical values when you put mouse pointer on it.
-* To use plotly, you need to load the library first. Then, make `Figure` object instance and after that, you can add plots to the instance by `add_trace` method.
-  ```python
-  import numpy as np
-  xs = np.linspace(0, 10, 100)
-  sins = np.sin(xs)
-  randoms = np.random.rand(100)
-
-  import plotly.graph_objects as go
-  fig = go.Figure()
-
-  # adding scatter plot
-  fig.add_trace(go.Scatter(x=xs, y=sins))
-
-  # adding another scatter plot
-  fig.add_trace(go.Scatter(x=xs, y=randoms))
-
-  fig.show()
-  ```
-* If you are using Google Colab, put follwing lines after importing the library.
-  ```python
-
-  import plotly.io as pio
-  pio.renderers.default = "colab"
-  ```
-
-## Application
-* You can plot the interactive chart as follows.
-  ```python
-  import plotly
-  import plotly.graph_objs as go
-  from plotly.subplots import make_subplots
-  import pandas as pd
-  import plotly.io as pio
-  pio.renderers.default = "colab"
-
-  df = pd.read_csv(
-      'https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv')
-
-  fig = go.Figure(data=[
-          go.Candlestick(
-              x=df['Date'],
-              open=df['AAPL.Open'],
-              high=df['AAPL.High'],
-              low=df['AAPL.Low'],
-              close=df['AAPL.Close'])])
-  fig.show()
-  ```

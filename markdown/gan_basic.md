@@ -1,20 +1,18 @@
 # Generative Adversarial Networks (GAN) - Basics
 
 ## What is GAN?
-
-GAN (Generative Adversarial Network) is a type of neural network that can **generate new images**. Unlike normal neural networks that classify or predict, GANs create something new!
-
-GAN consists of two neural networks that compete against each other:
+* GAN (Generative Adversarial Network) is a type of neural network that can **generate new images**. Unlike normal neural networks that classify or predict, GANs create something new.
+* GAN consists of two neural networks that compete against each other:
 
 1. **Generator** - The "artist" that creates fake images
 2. **Discriminator** - The "critic" that judges if an image is real or fake
 
-Think of it like a game:
-- The Generator tries to create images good enough to fool the Discriminator
-- The Discriminator tries to get better at catching fakes
-- As they compete, both improve - and the Generator learns to create realistic images.
+* Think of it like a game:
+  - The Generator tries to create images good enough to fool the Discriminator
+  - The Discriminator tries to get better at catching fakes
+  - As they compete, both improve - and the Generator learns to create realistic images.
 
-<p align=center>
+<p align="center">
 <img src="../fig/gan.png" width=60%>
 </p>
 
@@ -32,6 +30,21 @@ handwritten digits (0-9).
 3. The Discriminator compares it with real MNIST images
 4. Based on feedback, the Generator improves
 5. After training, the Generator can create realistic digit images from any random input.
+
+## Activation Functions
+
+| Function | What it does | Used in |
+|----------|--------------|---------|
+| **ReLU** | Outputs 0 for negative, keeps positive | Generator |
+| **LeakyReLU** | Like ReLU but allows small negatives | Discriminator |
+| **Tanh** | Squashes output to [-1, 1] | Generator's final layer |
+
+## Why These Choices?
+
+- **Tanh for Generator output**: MNIST images are normalized to [-1, 1], so Generator must output the same range
+- **LeakyReLU for Discriminator**: Prevents "dead neurons" and helps gradients flow better
+- **Adam optimizer**: Adapts learning rate automatically, works well for GANs
+- **BCEWithLogitsLoss**: Binary Cross Entropy loss for real/fake classification
 
 
 # GAN Training Overview
