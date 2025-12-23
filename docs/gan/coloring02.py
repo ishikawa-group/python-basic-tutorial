@@ -1,9 +1,6 @@
-"""Training script for grayscale-to-color GAN (v02c).
+"""Training script for grayscale-to-color GAN (v02).
 
-This version uses:
-- UNet generator with skip connections
-- PatchGAN discriminator
-Works in Google Colab.
+This version works in Google Colab.
 """
 
 import os
@@ -59,9 +56,6 @@ class HFAFPairDataset(Dataset):
                     self.images.append(os.path.join(dirpath, name))
         self.images.sort()
 
-        if not self.images:
-            raise ValueError(f"No images found in {self.root}")
-
     def __len__(self):
         return len(self.images)
 
@@ -76,98 +70,43 @@ class HFAFPairDataset(Dataset):
 # =============================================================================
 
 class Generator(nn.Module):
-    """Simple UNet for grayscale-to-color conversion.
-
-    UNet architecture with skip connections:
-    - Encoder: downsamples the input
-    - Decoder: upsamples and concatenates with encoder features (skip connections)
-    - Skip connections help preserve spatial details during colorization
-    """
+    """Convert 1-channel grayscale to 3-channel color."""
 
     def __init__(self):
         super().__init__()
-        # Encoder (downsampling path)
-        self.enc1 = nn.Sequential(
-            nn.Conv2d(1, 64, kernel_size=4, stride=2, padding=1),  # 64->32
+        self.model = nn.Sequential(
+            # Encoder
+            nn.Conv2d(1, 32, kernel_size=4, stride=2, padding=1),
             nn.ReLU(),
-        )
-        self.enc2 = nn.Sequential(
-            nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1),  # 32->16
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-        )
-        self.enc3 = nn.Sequential(  # Bottleneck
-            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1),  # 16->8
-            nn.BatchNorm2d(256),
-            nn.ReLU(),
-        )
 
-        # Decoder (upsampling path with skip connections)
-        self.dec3 = nn.Sequential(
-            nn.ConvTranspose2d(256, 128, kernel_size=4, stride=2, padding=1),  # 8->16
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-        )
-        # Input: 128 (from dec3) + 128 (skip from enc2) = 256 channels
-        self.dec2 = nn.Sequential(
-            nn.ConvTranspose2d(256, 64, kernel_size=4, stride=2, padding=1),  # 16->32
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-        )
-        # Input: 64 (from dec2) + 64 (skip from enc1) = 128 channels
-        self.dec1 = nn.Sequential(
-            nn.ConvTranspose2d(128, 3, kernel_size=4, stride=2, padding=1),  # 32->64
+            # Decoder
+            nn.ConvTranspose2d(32, 3, kernel_size=4, stride=2, padding=1),
             nn.Tanh(),
         )
 
     def forward(self, x):
-        # Encoder
-        e1 = self.enc1(x)   # [B, 64, 32, 32]
-        e2 = self.enc2(e1)  # [B, 128, 16, 16]
-        e3 = self.enc3(e2)  # [B, 256, 8, 8]
-
-        # Decoder with skip connections
-        d3 = self.dec3(e3)                          # [B, 128, 16, 16]
-        d2 = self.dec2(torch.cat([d3, e2], dim=1))  # [B, 64, 32, 32]
-        d1 = self.dec1(torch.cat([d2, e1], dim=1))  # [B, 3, 64, 64]
-
-        return d1
+        return self.model(x)
 
 
 class Discriminator(nn.Module):
-    """PatchGAN discriminator.
+    """Judge whether the image pair is real or generated."""
 
-    Instead of outputting a single real/fake score, PatchGAN outputs
-    a grid where each cell judges whether a local patch is real or fake.
-    This helps the discriminator focus on local texture and details.
-    """
-
-    def __init__(self):
+    def __init__(self, image_size=64, hidden_dim=256):
         super().__init__()
-        # Input: 4 channels (1 gray + 3 color)
+        input_dim = (1 + 3) * image_size * image_size  # gray (1ch) + color (3ch)
         self.model = nn.Sequential(
-            # 64 -> 32
-            nn.Conv2d(4, 64, kernel_size=4, stride=2, padding=1),
-            nn.LeakyReLU(0.2),
-
-            # 32 -> 16
-            nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(0.2),
-
-            # 16 -> 8
-            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(0.2),
-
-            # 8 -> 4 (output patch grid)
-            nn.Conv2d(256, 1, kernel_size=4, stride=2, padding=1),
+            nn.Flatten(),
+            nn.Linear(input_dim, hidden_dim),
+            nn.ReLU(0.2),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(0.2),
+            nn.Linear(hidden_dim, 1),
             nn.Sigmoid(),
         )
 
     def forward(self, gray, color):
-        x = torch.cat([gray, color], dim=1)  # [B, 4, 64, 64]
-        return self.model(x)  # [B, 1, 4, 4]
+        x = torch.cat([gray, color], dim=1)
+        return self.model(x)
 
 
 # =============================================================================
@@ -211,14 +150,12 @@ def train(train_loader, image_size, epochs=1, learning_rate=2e-4):
 
     # Build models
     generator = Generator()
-    discriminator = Discriminator()
+    discriminator = Discriminator(image_size=image_size)
     generator.to(device)
     discriminator.to(device)
 
     # Loss functions
     bce_loss = nn.BCELoss()
-    l1_loss = nn.L1Loss()
-    lambda_l1 = 100  # Weight for L1 loss (pix2pix uses 100)
 
     # Optimizers
     optim_g = Adam(generator.parameters(), lr=learning_rate, betas=(0.5, 0.999))
@@ -235,8 +172,7 @@ def train(train_loader, image_size, epochs=1, learning_rate=2e-4):
             fake = generator(gray)
             pred_fake = discriminator(gray, fake)
             loss_gan = bce_loss(pred_fake, torch.ones_like(pred_fake))
-            loss_l1 = l1_loss(fake, real) * lambda_l1
-            loss_g = loss_gan + loss_l1
+            loss_g = loss_gan
             loss_g.backward()
             optim_g.step()
 
@@ -278,9 +214,6 @@ def generate(generator, test_loader):
             gray_images.append((gray[i].repeat(3, 1, 1).cpu() * 0.5 + 0.5))
             fake_images.append((fake[i].cpu() * 0.5 + 0.5))
             real_images.append((real[i].cpu() * 0.5 + 0.5))
-
-    if not gray_images:
-        raise ValueError("No samples were found in test_loader; cannot create a result image.")
 
     # Beginner-friendly display using torchvision:
     # Put images into a 3 x N grid (rows: gray / fake / real) and show it once.

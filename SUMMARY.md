@@ -21,5 +21,6 @@
   * [Plot](./markdown/plot.md)
   * [Numpy](./markdown/numpy.md)
   * [PyTorch](./markdown/pytorch.md)
+  * [Generative adversarial network (advanced)](./markdown/gan_advanced.md)
 
 * [Answers](./markdown/answer.md)
