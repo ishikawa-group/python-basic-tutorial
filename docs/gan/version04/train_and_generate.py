@@ -1,6 +1,8 @@
-"""Training script for grayscale-to-color GAN (v02b).
+"""Training script for grayscale-to-color GAN (v02c).
 
-This version uses a simple UNet generator with skip connections.
+This version uses:
+- UNet generator with skip connections
+- PatchGAN discriminator
 Works in Google Colab.
 """
 
@@ -133,24 +135,39 @@ class Generator(nn.Module):
 
 
 class Discriminator(nn.Module):
-    """Judge whether the image pair is real or generated."""
+    """PatchGAN discriminator.
 
-    def __init__(self, image_size=64, hidden_dim=256):
+    Instead of outputting a single real/fake score, PatchGAN outputs
+    a grid where each cell judges whether a local patch is real or fake.
+    This helps the discriminator focus on local texture and details.
+    """
+
+    def __init__(self):
         super().__init__()
-        input_dim = (1 + 3) * image_size * image_size  # gray (1ch) + color (3ch)
+        # Input: 4 channels (1 gray + 3 color)
         self.model = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(input_dim, hidden_dim),
+            # 64 -> 32
+            nn.Conv2d(4, 64, kernel_size=4, stride=2, padding=1),
             nn.LeakyReLU(0.2),
-            nn.Linear(hidden_dim, hidden_dim),
+
+            # 32 -> 16
+            nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(128),
             nn.LeakyReLU(0.2),
-            nn.Linear(hidden_dim, 1),
+
+            # 16 -> 8
+            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(256),
+            nn.LeakyReLU(0.2),
+
+            # 8 -> 4 (output patch grid)
+            nn.Conv2d(256, 1, kernel_size=4, stride=2, padding=1),
             nn.Sigmoid(),
         )
 
     def forward(self, gray, color):
-        x = torch.cat([gray, color], dim=1)
-        return self.model(x)
+        x = torch.cat([gray, color], dim=1)  # [B, 4, 64, 64]
+        return self.model(x)  # [B, 1, 4, 4]
 
 
 # =============================================================================
@@ -194,7 +211,7 @@ def train(train_loader, image_size, epochs=1, learning_rate=2e-4):
 
     # Build models
     generator = Generator()
-    discriminator = Discriminator(image_size=image_size)
+    discriminator = Discriminator()
     generator.to(device)
     discriminator.to(device)
 

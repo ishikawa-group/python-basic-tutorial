@@ -1,34 +1,34 @@
-"""Training script for grayscale-to-color GAN (v03).
+"""Training script for grayscale-to-color GAN (v02).
 
 This version works in Google Colab.
-All code is in one file for easy copy-paste.
 """
 
 import os
+import matplotlib.pyplot as plt
+from PIL import Image
 import torch
 from torch import nn
 from torch.optim import Adam
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms
 from torchvision.transforms.functional import to_pil_image
-from PIL import Image, ImageDraw, ImageFont
+from torchvision.utils import make_grid
 
 
 # =============================================================================
 # Dataset
 # =============================================================================
 
+
 def basic_transforms(image_size=96):
     """Create transforms for color and grayscale images."""
     color = transforms.Compose([
         transforms.Resize((image_size, image_size)),
-        transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
     gray = transforms.Compose([
         transforms.Resize((image_size, image_size)),
         transforms.Grayscale(num_output_channels=1),
-        transforms.ToTensor(),
         transforms.Normalize((0.5,), (0.5,)),
     ])
     return color, gray
@@ -63,11 +63,9 @@ class HFAFPairDataset(Dataset):
         return len(self.images)
 
     def __getitem__(self, idx):
-        path = self.images[idx]
-        image = Image.open(path).convert("RGB")
-        color = self.transform(image)
-        gray = self.grayscale_transform(image)
-        return gray, color
+        image = Image.open(self.images[idx]).convert("RGB")
+        image = transforms.functional.to_tensor(image)
+        return self.grayscale_transform(image), self.transform(image)
 
 
 # =============================================================================
@@ -81,10 +79,11 @@ class Generator(nn.Module):
         super().__init__()
         self.model = nn.Sequential(
             # Encoder
-            nn.Conv2d(1, 8, kernel_size=4, stride=2, padding=1),  # 96->48
+            nn.Conv2d(1, 32, kernel_size=4, stride=2, padding=1),
             nn.ReLU(),
+
             # Decoder
-            nn.ConvTranspose2d(8, 3, kernel_size=4, stride=2, padding=1),  # 48->96
+            nn.ConvTranspose2d(32, 3, kernel_size=4, stride=2, padding=1),
             nn.Tanh(),
         )
 
@@ -95,23 +94,22 @@ class Generator(nn.Module):
 class Discriminator(nn.Module):
     """Judge whether the image pair is real or generated."""
 
-    def __init__(self):
+    def __init__(self, image_size=64, hidden_dim=256):
         super().__init__()
+        input_dim = (1 + 3) * image_size * image_size  # gray (1ch) + color (3ch)
         self.model = nn.Sequential(
-            nn.Conv2d(4, 16, kernel_size=4, stride=2, padding=1),  # 96->48
-            nn.LeakyReLU(0.2),
             nn.Flatten(),
-            nn.LazyLinear(1),
+            nn.Linear(input_dim, hidden_dim),
+            nn.ReLU(0.2),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(0.2),
+            nn.Linear(hidden_dim, 1),
+            nn.Sigmoid(),
         )
 
     def forward(self, gray, color):
         x = torch.cat([gray, color], dim=1)
         return self.model(x)
-
-
-def build_models():
-    """Create generator and discriminator."""
-    return Generator(), Discriminator()
 
 
 # =============================================================================
@@ -147,36 +145,20 @@ def make_dataloaders(data_dir, batch_size, image_size=96, test_ratio=0.2):
 
 
 # =============================================================================
-# Device selection
-# =============================================================================
-
-def get_device():
-    """Return the fastest available device."""
-    if torch.cuda.is_available():
-        return "cuda"
-    if torch.backends.mps.is_available():
-        return "mps"
-    return "cpu"
-
-
-# =============================================================================
 # Training
 # =============================================================================
 
-def train(train_loader, epochs=1, learning_rate=2e-4, device=None):
+def train(train_loader, image_size, epochs=1, learning_rate=2e-4):
     """Train the colorization GAN."""
-    if device is None:
-        device = get_device()
-    print(f"Device: {device}")
 
     # Build models
-    generator, discriminator = build_models()
+    generator = Generator()
+    discriminator = Discriminator(image_size=image_size)
     generator.to(device)
     discriminator.to(device)
 
     # Loss functions
-    bce_loss = nn.BCEWithLogitsLoss()
-    l1_loss = nn.L1Loss()
+    bce_loss = nn.BCELoss()
 
     # Optimizers
     optim_g = Adam(generator.parameters(), lr=learning_rate, betas=(0.5, 0.999))
@@ -193,8 +175,7 @@ def train(train_loader, epochs=1, learning_rate=2e-4, device=None):
             fake = generator(gray)
             pred_fake = discriminator(gray, fake)
             loss_gan = bce_loss(pred_fake, torch.ones_like(pred_fake))
-            loss_l1 = l1_loss(fake, real) * 100
-            loss_g = loss_gan + loss_l1
+            loss_g = loss_gan
             loss_g.backward()
             optim_g.step()
 
@@ -206,20 +187,16 @@ def train(train_loader, epochs=1, learning_rate=2e-4, device=None):
             loss_d.backward()
             optim_d.step()
 
-            if step % 10 == 0:
-                print(f"Epoch {epoch+1}/{epochs} Step {step}/{len(train_loader)} "
-                      f"D: {loss_d.item():.4f} G: {loss_g.item():.4f}")
+        print(f"Epoch {epoch+1}/{epochs} done")
 
-        print(f"Epoch {epoch+1} done")
-
-    return generator, device
+    return generator
 
 
 # =============================================================================
 # Visualization
 # =============================================================================
 
-def generate(generator, test_loader, device):
+def generate(generator, test_loader):
     """Colorize test images and save a grid."""
     max_samples = 10
     gray_images, fake_images, real_images = [], [], []
@@ -242,42 +219,22 @@ def generate(generator, test_loader, device):
             real_images.append((real[i].cpu() * 0.5 + 0.5))
 
     if not gray_images:
-        return None
+        raise ValueError("No samples were found in test_loader; cannot create a result image.")
 
-    # Create canvas
-    tile_h = gray_images[0].shape[1]
-    tile_w = gray_images[0].shape[2]
+    # Beginner-friendly display using torchvision:
+    # Put images into a 3 x N grid (rows: gray / fake / real) and show it once.
+
     num_cols = len(gray_images)
+    grid_images = gray_images + fake_images + real_images  # first row, second row, third row
+    grid = make_grid(grid_images, nrow=num_cols, padding=2)
 
-    canvas = Image.new("RGB", (tile_w * num_cols, tile_h * 3))
-
-    for i, img in enumerate(gray_images):
-        canvas.paste(to_pil_image(img), (i * tile_w, 0))
-    for i, img in enumerate(fake_images):
-        canvas.paste(to_pil_image(img), (i * tile_w, tile_h))
-    for i, img in enumerate(real_images):
-        canvas.paste(to_pil_image(img), (i * tile_w, tile_h * 2))
-
-    # Scale up
-    scale = 6
-    canvas = canvas.resize((canvas.width * scale, canvas.height * scale), Image.Resampling.BILINEAR)
-
-    # Add labels with black background
-    draw = ImageDraw.Draw(canvas)
-    font = ImageFont.load_default(size=50)
-
-    labels = ["Grayscale input", "Colorized output", "Original color"]
-    for i, text in enumerate(labels):
-        x, y = 10, tile_h * scale * i + 10
-        bbox = draw.textbbox((x, y), text, font=font)
-        draw.rectangle(bbox, fill=(0, 0, 0))
-        draw.text((x, y), text, fill=(255, 255, 255), font=font)
-
-    # Save
-    canvas.save("result.png")
-    print("Saved to result.png")
-
-    return "result.png"
+    plt.figure(figsize=(2.2 * num_cols, 6))
+    plt.title("Top: grayscale input  |  Middle: colorized  |  Bottom: original")
+    plt.imshow(to_pil_image(grid.clamp(0, 1)))
+    plt.axis("off")
+    plt.tight_layout()
+    plt.show()
+    return None
 
 
 # =============================================================================
@@ -285,14 +242,19 @@ def generate(generator, test_loader, device):
 # =============================================================================
 
 if __name__ == "__main__":
-    # Settings (change data_dir for your environment)
-    data_dir = "../../data/HFAF-small"  # In Colab: "/content/data/HFAF-small"
-    epochs = 4
+    if torch.cuda.is_available():
+        device = "cuda"
+    else:
+        device = "cpu"
+    print(f"Device: {device}")
+
+    data_dir = "../data/HFAF-small"  # In Colab: "/content/data/HFAF-small"
+    epochs = 10
     batch_size = 16
     learning_rate = 2e-4
     image_size = 64
 
     # Run
     train_loader, test_loader = make_dataloaders(data_dir, batch_size, image_size)
-    generator, device = train(train_loader, epochs=epochs, learning_rate=learning_rate)
-    generate(generator, test_loader, device)
+    generator = train(train_loader, image_size=image_size, epochs=epochs, learning_rate=learning_rate)
+    generate(generator, test_loader)

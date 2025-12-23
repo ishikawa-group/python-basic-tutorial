@@ -4,8 +4,6 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
-from tqdm import tqdm
-from IPython.display import clear_output
 
 # For Google Colab inline plotting
 # %matplotlib inline
@@ -13,12 +11,13 @@ from IPython.display import clear_output
 # ============================================
 # 1. Define Hyperparameters
 # ============================================
+
 latent_dim = 64      # Size of random noise input to Generator
 hidden_dim = 256     # Number of neurons in hidden layers
 image_dim = 28 * 28  # MNIST image size (784 pixels)
 batch_size = 64
-epochs = 20
-learning_rate = 0.0002
+epochs = 30
+learning_rate = 2e-4
 
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -27,7 +26,13 @@ print(f"Using device: {device}")
 # ============================================
 # 2. Define Generator Network
 # ============================================
+
+
 class Generator(nn.Module):
+    """
+    Generator network for MNIST GAN.
+      noise (latent_dim) -> hidden layers -> flattened image (image_dim).
+    """
     # Architecture: noise → hidden layers → image
     # Input:  random noise vector (size: latent_dim)
     # Output: fake image (size: image_dim)
@@ -36,26 +41,30 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
         # Layer 1: latent_dim → hidden_dim, then ReLU activation
         # Layer 2: hidden_dim → hidden_dim, then ReLU activation
-        # Layer 3: hidden_dim → image_dim, then Tanh activation
-        # Tanh outputs values in range [-1, 1]
+        # Layer 3: hidden_dim → image_dim, then Sigmoid activation
+        # Sigmoid outputs values in range [0, 1]
         self.model = nn.Sequential(
             nn.Linear(latent_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, image_dim),
-            nn.Tanh()
+            nn.Sigmoid(),
         )
 
     def forward(self, z):
-        # z: random noise
-        # returns: generated fake image
         return self.model(z)
 
 # ============================================
 # 3. Define Discriminator Network
 # ============================================
+
+
 class Discriminator(nn.Module):
+    """
+    Discriminator network for MNIST GAN.
+    """
+
     # Architecture: image → hidden layers → real/fake score
     # Input:  image (size: image_dim)
     # Output: single value (probability of being real)
@@ -64,13 +73,15 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
         # Layer 1: image_dim → hidden_dim, then ReLU activation
         # Layer 2: hidden_dim → hidden_dim, then ReLU activation
-        # Layer 3: hidden_dim → 1 (single output)
+        # Layer 3: hidden_dim → 1 (single output), then Sigmoid activation
+        # Sigmoid outputs values in range [0, 1] (probability)
         self.model = nn.Sequential(
             nn.Linear(image_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
-            nn.Linear(hidden_dim, 1)
+            nn.Linear(hidden_dim, 1),
+            nn.Sigmoid(),
         )
 
     def forward(self, x):
@@ -81,42 +92,37 @@ class Discriminator(nn.Module):
 # ============================================
 # 4. Initialize Models and Optimizers
 # ============================================
+
+
 generator = Generator().to(device)
 discriminator = Discriminator().to(device)
 
 # Loss function: Binary Cross Entropy (BCE)
-criterion = nn.BCEWithLogitsLoss()
+# Note: Since the Discriminator uses Sigmoid, we use BCELoss (not BCEWithLogitsLoss).
+criterion = nn.BCELoss()
 
 # Optimizers: Adam optimizer for both G and D
 optimizer_g = optim.Adam(generator.parameters(), lr=learning_rate)
 optimizer_d = optim.Adam(discriminator.parameters(), lr=learning_rate)
 
+
 # ============================================
 # 5. Load MNIST Dataset
 # ============================================
 # Load 60,000 training images of handwritten digits
-# Normalize pixel values to range [-1, 1]
+# Pixel values in range [0, 1]
 # Create batches of size batch_size
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.5,), (0.5,))  # Normalize to [-1, 1]
-])
-
+transform = transforms.ToTensor()  # Pixel values in [0, 1]
 train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
 dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
 # ============================================
 # 6. Training Loop
 # ============================================
-# Store losses for plotting
-g_losses = []
-d_losses = []
-
 for epoch in range(epochs):
-    epoch_d_loss = 0
-    epoch_g_loss = 0
+    for real_images, _ in dataloader:
+        # Note: the dataloader in MNIST returns (images, labels), and the latter is not needed now.
 
-    for real_images, _ in tqdm(dataloader, desc=f"Epoch {epoch+1}/{epochs}"):
         batch_size_current = real_images.size(0)
         real_images = real_images.view(batch_size_current, -1).to(device)
 
@@ -158,16 +164,7 @@ for epoch in range(epochs):
         loss_g.backward()
         optimizer_g.step()
 
-        epoch_d_loss += loss_d.item()
-        epoch_g_loss += loss_g.item()
-
-    # Average loss for the epoch
-    avg_d_loss = epoch_d_loss / len(dataloader)
-    avg_g_loss = epoch_g_loss / len(dataloader)
-    d_losses.append(avg_d_loss)
-    g_losses.append(avg_g_loss)
-
-    print(f"Epoch {epoch+1}: discriminator loss={avg_d_loss:.4f}, generator loss={avg_g_loss:.4f}")
+    print(f"Now doing for epoch {epoch+1}/{epochs}")
 
 # ============================================
 # 7. Generate New Images (After Training)
@@ -175,16 +172,6 @@ for epoch in range(epochs):
 # noise = random_normal(size=latent_dim)
 # new_image = generator(noise)
 # The generated image should look like a handwritten digit!
-
-# Plot training losses
-plt.figure(figsize=(8, 4))
-plt.plot(d_losses, label='Discriminator Loss')
-plt.plot(g_losses, label='Generator Loss')
-plt.xlabel('Epoch')
-plt.ylabel('Loss')
-plt.title('Training Losses')
-plt.legend()
-plt.show()
 
 # Generate final images
 generator.eval()
@@ -211,6 +198,5 @@ for i in range(16):
     plt.imshow(generated_images[i], cmap="gray")
     plt.axis("off")
 
-plt.title(f"Final generated images")
 plt.tight_layout()
 plt.show()

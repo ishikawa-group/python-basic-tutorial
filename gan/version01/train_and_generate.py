@@ -14,13 +14,6 @@ def make_dataloaders(data_dir, batch_size, image_size=64):
     return "train_loader", "test_loader"
 
 
-def get_device():
-    """Return the fastest available device."""
-    print("get_device()")
-    print("  -> Would check for cuda/mps/cpu")
-    return "cpu"
-
-
 def train(train_loader, epochs=1, learning_rate=2e-4):
     """Train the colorization GAN."""
     print(f"train(train_loader, epochs={epochs}, learning_rate={learning_rate})")
@@ -32,12 +25,12 @@ def train(train_loader, epochs=1, learning_rate=2e-4):
         print("       - Train Discriminator (real vs fake)")
         print("       - Train Generator (fool Discriminator)")
     print("  -> Training complete")
-    return "generator", get_device()
+    return "generator"
 
 
-def generate(generator, test_loader, device):
+def generate(generator, test_loader):
     """Colorize test images and save result."""
-    print(f"generate(generator, test_loader, device={device})")
+    print(f"generate(generator, test_loader")
     print("  -> Would colorize test images")
     print("  -> Would save result.png")
     return "result.png"
@@ -63,12 +56,12 @@ if __name__ == "__main__":
 
     print("Step 2: Train Model")
     print("-" * 30)
-    generator, device = train(train_loader, epochs=epochs)
+    generator = train(train_loader, epochs=epochs)
     print()
 
     print("Step 3: Generate Results")
     print("-" * 30)
-    output_path = generate(generator, test_loader, device)
+    output_path = generate(generator, test_loader)
     print()
 
     print("=" * 50)

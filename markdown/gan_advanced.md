@@ -68,6 +68,84 @@ Input                                              Output
 3. **Sharp Output**: Fine details from encoder help decoder create crisp results
 
 
+# PatchGAN Discriminator
+* PatchGAN is a discriminator architecture commonly used in image-to-image GANs like pix2pix.
+* Instead of outputting a single "real/fake" score, it outputs a grid of scores.
+
+### Standard Discriminator vs PatchGAN
+
+**Standard Discriminator (MLP):**
+- Flattens the entire image into a 1D vector
+- Outputs a single scalar: "Is this image real or fake?"
+- Problem: Looks at the whole image at once, may miss local details
+
+**PatchGAN Discriminator:**
+- Uses only convolutional layers (no flattening)
+- Outputs a grid (e.g., 4x4) of real/fake scores
+- Each cell in the grid judges a local "patch" of the input image
+
+```
+Input Image (64x64)          PatchGAN Output (4x4)
+┌────────────────────┐       ┌─────┬─────┬─────┬─────┐
+│                    │       │0.8  │0.9  │0.7  │0.85 │
+│    Full Image      │  ──▶  ├─────┼─────┼─────┼─────┤
+│                    │       │0.75 │0.95 │0.88 │0.82 │
+│                    │       ├─────┼─────┼─────┼─────┤
+│                    │       │0.92 │0.78 │0.91 │0.86 │
+│                    │       ├─────┼─────┼─────┼─────┤
+│                    │       │0.83 │0.87 │0.79 │0.90 │
+└────────────────────┘       └─────┴─────┴─────┴─────┘
+                              Each cell judges a 16x16 patch
+```
+
+### Why PatchGAN Works Well
+
+1. **Focuses on Local Texture**: Each patch judges local details like edges and textures
+2. **Fewer Parameters**: No huge fully-connected layers needed
+3. **Works on Any Image Size**: Convolutional-only architecture is flexible
+4. **Better for Style/Texture**: Particularly good at enforcing realistic textures
+
+### Example Architecture
+
+```python
+class Discriminator(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.model = nn.Sequential(
+            # Input: 4 channels (1 gray + 3 color for conditional GAN)
+            nn.Conv2d(4, 64, kernel_size=4, stride=2, padding=1),   # 64->32
+            nn.LeakyReLU(0.2),
+
+            nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1), # 32->16
+            nn.BatchNorm2d(128),
+            nn.LeakyReLU(0.2),
+
+            nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1), # 16->8
+            nn.BatchNorm2d(256),
+            nn.LeakyReLU(0.2),
+
+            nn.Conv2d(256, 1, kernel_size=4, stride=2, padding=1),  # 8->4
+            nn.Sigmoid(),
+        )
+
+    def forward(self, gray, color):
+        x = torch.cat([gray, color], dim=1)  # [B, 4, 64, 64]
+        return self.model(x)  # [B, 1, 4, 4] patch grid
+```
+
+### Training with PatchGAN
+
+* The loss function (BCELoss) works the same way
+* `torch.ones_like(output)` creates a grid of 1s (all patches should be "real")
+* `torch.zeros_like(output)` creates a grid of 0s (all patches should be "fake")
+
+```python
+# Loss is computed over all patches
+loss_real = bce_loss(discriminator(gray, real), torch.ones_like(pred))
+loss_fake = bce_loss(discriminator(gray, fake), torch.zeros_like(pred))
+```
+
+
 # Transposed Convolution (Deconvolution)
 * Standard convolution often reduces spatial dimensions.
 * *Transposed convolution* increases spatial dimensions.
@@ -131,3 +209,26 @@ Input=14, Kernel=4, Stride=2, Padding=1 → Output = (14+2-4)/2+1 = 7  (half siz
 - Kernel=3, Stride=1, Padding=1 → **Same size** (commonly used)
 - Kernel=4, Stride=2, Padding=1 → **Half size** (for downsampling)
 - Kernel=4, Stride=2, Padding=1 (in TransposeConv2d) → **Double size** (for upsampling)
+
+
+# Matplotlib `imshow` Warning (Clipping)
+Sometimes you may see a message like this when you plot generated images:
+
+```
+Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers).
+Got range [0.044..1.0000001].
+```
+
+### Why it happens
+* `matplotlib.pyplot.imshow()` expects RGB float images to be in the range **0 to 1**.
+* During training/visualization we often "unnormalize" tensors (example: `x * 0.5 + 0.5`).
+* Because of floating-point rounding, you can get tiny values like `1.0000001`.
+
+### Simple fix
+* Clamp the tensor right before plotting:
+
+```python
+from torchvision.transforms.functional import to_pil_image
+
+ax.imshow(to_pil_image(img.clamp(0, 1)))
+```
