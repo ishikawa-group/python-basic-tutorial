@@ -1,21 +1,20 @@
 # GAN advanced topics
-* Here some advanced topics about the GAN are explained.
+* Here some advanced topics about the GAN are explained
 
 # U-Net Architecture
-* U-Net is a popular neural network architecture for image-to-image tasks.
-* It's widely used as the Generator in conditional GANs.
+* U-Net is a popular neural network architecture for image-to-image tasks
 
 ### Encoder-Decoder Structure
 
 * U-Net has a U-shaped structure with two parts:
 
 **Encoder (downsampling):**
-- Shrinks the image step by step: 96→48→24→12→6
+- Shrinks the image step by step: e.g., 96x96 → 48x48 → 24x24 → 12x12 → 6x6
 - Each step extracts higher-level features
 - Captures "what" is in the image (shapes, objects)
 
 **Decoder (upsampling):**
-- Expands the image back: 6→12→24→48→96
+- Expands the image back: 6x6 → 12x12 → 24x24 → 48x48 → 96x96
 - Each step reconstructs spatial details
 - Reconstructs "where" things are
 
@@ -74,12 +73,12 @@ Input                                              Output
 
 ### Standard Discriminator vs PatchGAN
 
-**Standard Discriminator (MLP):**
+**Standard Discriminator**
 - Flattens the entire image into a 1D vector
 - Outputs a single scalar: "Is this image real or fake?"
 - Problem: Looks at the whole image at once, may miss local details
 
-**PatchGAN Discriminator:**
+**PatchGAN Discriminator**
 - Uses only convolutional layers (no flattening)
 - Outputs a grid (e.g., 4x4) of real/fake scores
 - Each cell in the grid judges a local "patch" of the input image
@@ -87,7 +86,7 @@ Input                                              Output
 ```
 Input Image (64x64)          PatchGAN Output (4x4)
 ┌────────────────────┐       ┌─────┬─────┬─────┬─────┐
-│                    │       │0.8  │0.9  │0.7  │0.85 │
+│                    │       │0.80 │0.90 │0.70 │0.85 │
 │    Full Image      │  ──▶  ├─────┼─────┼─────┼─────┤
 │                    │       │0.75 │0.95 │0.88 │0.82 │
 │                    │       ├─────┼─────┼─────┼─────┤
@@ -114,15 +113,15 @@ class Discriminator(nn.Module):
         self.model = nn.Sequential(
             # Input: 4 channels (1 gray + 3 color for conditional GAN)
             nn.Conv2d(4, 64, kernel_size=4, stride=2, padding=1),   # 64->32
-            nn.LeakyReLU(0.2),
+            nn.ReLU(0.2),
 
             nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1), # 32->16
             nn.BatchNorm2d(128),
-            nn.LeakyReLU(0.2),
+            nn.ReLU(0.2),
 
             nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1), # 16->8
             nn.BatchNorm2d(256),
-            nn.LeakyReLU(0.2),
+            nn.ReLU(0.2),
 
             nn.Conv2d(256, 1, kernel_size=4, stride=2, padding=1),  # 8->4
             nn.Sigmoid(),
@@ -210,25 +209,3 @@ Input=14, Kernel=4, Stride=2, Padding=1 → Output = (14+2-4)/2+1 = 7  (half siz
 - Kernel=4, Stride=2, Padding=1 → **Half size** (for downsampling)
 - Kernel=4, Stride=2, Padding=1 (in TransposeConv2d) → **Double size** (for upsampling)
 
-
-# Matplotlib `imshow` Warning (Clipping)
-Sometimes you may see a message like this when you plot generated images:
-
-```
-Clipping input data to the valid range for imshow with RGB data ([0..1] for floats or [0..255] for integers).
-Got range [0.044..1.0000001].
-```
-
-### Why it happens
-* `matplotlib.pyplot.imshow()` expects RGB float images to be in the range **0 to 1**.
-* During training/visualization we often "unnormalize" tensors (example: `x * 0.5 + 0.5`).
-* Because of floating-point rounding, you can get tiny values like `1.0000001`.
-
-### Simple fix
-* Clamp the tensor right before plotting:
-
-```python
-from torchvision.transforms.functional import to_pil_image
-
-ax.imshow(to_pil_image(img.clamp(0, 1)))
-```
