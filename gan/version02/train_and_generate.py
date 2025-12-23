@@ -56,9 +56,6 @@ class HFAFPairDataset(Dataset):
                     self.images.append(os.path.join(dirpath, name))
         self.images.sort()
 
-        if not self.images:
-            raise ValueError(f"No images found in {self.root}")
-
     def __len__(self):
         return len(self.images)
 
@@ -217,9 +214,6 @@ def generate(generator, test_loader):
             gray_images.append((gray[i].repeat(3, 1, 1).cpu() * 0.5 + 0.5))
             fake_images.append((fake[i].cpu() * 0.5 + 0.5))
             real_images.append((real[i].cpu() * 0.5 + 0.5))
-
-    if not gray_images:
-        raise ValueError("No samples were found in test_loader; cannot create a result image.")
 
     # Beginner-friendly display using torchvision:
     # Put images into a 3 x N grid (rows: gray / fake / real) and show it once.
