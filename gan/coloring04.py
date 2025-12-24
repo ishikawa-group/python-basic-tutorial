@@ -303,7 +303,7 @@ if __name__ == "__main__":
         device = "cpu"
     print(f"Device: {device}")
 
-    data_dir = "../data/HFAF-small"  # In Colab: "/content/data/HFAF-small"
+    data_dir = "data/HFAF-small"  # In Colab: "/content/data/HFAF-small"
     epochs = 10
     batch_size = 16
     learning_rate = 2e-4
