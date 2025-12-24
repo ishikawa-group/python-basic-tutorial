@@ -17,6 +17,9 @@ from torchvision import transforms
 from torchvision.transforms.functional import to_pil_image
 from torchvision.utils import make_grid
 
+# Device configuration (works in both local and Colab)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 # =============================================================================
 # Dataset
@@ -297,13 +300,9 @@ def generate(generator, test_loader):
 # =============================================================================
 
 if __name__ == "__main__":
-    if torch.cuda.is_available():
-        device = "cuda"
-    else:
-        device = "cpu"
     print(f"Device: {device}")
 
-    data_dir = "../data/HFAF-small"  # In Colab: "/content/data/HFAF-small"
+    data_dir = "data/HFAF-small"  # In Colab: "/content/data/HFAF-small"
     epochs = 10
     batch_size = 16
     learning_rate = 2e-4
